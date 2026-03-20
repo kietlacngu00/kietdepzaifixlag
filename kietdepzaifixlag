@@ -4,29 +4,31 @@ local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
--- ID ÂM THANH BẠN ĐÃ CUNG CẤP
+-- ID ÂM THANH CỦA BẠN (ĐÃ KHỚP MỐC 20% VÀ 80%)
 local Sound_20_ID = "139289580459876"
 local Sound_80_ID = "138037008354605"
 
 local Gui = Instance.new("ScreenGui", CoreGui)
-Gui.Name = "kietdepzai_final"
+Gui.Name = "KietDepZai_Official"
 
--- HÀM PHÁT TIẾNG VÀ ĐỢI (ĐỂ KHỚP VỚI % CHẠY)
+-- HÀM PHÁT TIẾNG VÀ ĐỢI (ĐỂ THANH % CHẠY KHỚP GIỌNG NÓI)
 local function PlayAndWait(id)
     if not id or id == "" or id == "0" then return end
     local s = Instance.new("Sound", game.Workspace)
     s.SoundId = "rbxassetid://" .. id
     s.Volume = 5
     s:Play()
+    
     local timeout = 0
-    while s.Playing and timeout < 150 do -- Chờ tối đa 15s nếu tiếng quá dài
+    -- Đợi nói xong hoặc quá 15 giây thì tự chạy tiếp để tránh bị kẹt
+    while s.Playing and timeout < 150 do 
         task.wait(0.1)
         timeout = timeout + 1
     end
     s:Destroy()
 end
 
--- 1. FPS GÓC TRÁI
+-- 1. FPS GÓC TRÁI TRÊN CÙNG
 local FPSLabel = Instance.new("TextLabel", Gui)
 FPSLabel.Size = UDim2.new(0, 100, 0, 30)
 FPSLabel.Position = UDim2.new(0, 15, 0, 15)
@@ -52,7 +54,7 @@ Title.TextSize = 24
 Title.Font = Enum.Font.GothamBold
 Title.BackgroundTransparency = 1
 
--- 3. ẢNH HIỂN THỊ & Ô NHẬP ID
+-- 3. KHUNG ẢNH & Ô NHẬP ID (DÁN LÀ HIỆN)
 local Display = Instance.new("ImageLabel", Main)
 Display.Size = UDim2.new(0, 120, 0, 120)
 Display.Position = UDim2.new(0.5, -60, 0.18, 0)
@@ -63,7 +65,7 @@ Display.ScaleType = Enum.ScaleType.Fit
 local Box = Instance.new("TextBox", Main)
 Box.Size = UDim2.new(0, 180, 0, 35)
 Box.Position = UDim2.new(0.5, -90, 0.62, 0)
-Box.PlaceholderText = "DÁN ID ẢNH VÀO ĐÂY..."
+Box.PlaceholderText = "NHẬP ID ẢNH TẠI ĐÂY..."
 Box.Text = ""
 Box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 Box.TextColor3 = Color3.new(1, 1, 1)
@@ -74,7 +76,7 @@ Box:GetPropertyChangedSignal("Text"):Connect(function()
     if ID ~= "" then Display.Image = "rbxassetid://" .. ID end
 end)
 
--- 4. THANH TIẾN TRÌNH CẦU VỒNG RGB CHẠY QUA LẠI
+-- 4. THANH TIẾN TRÌNH 7 SẮC CẦU VỒNG (RGB)
 local BarBg = Instance.new("Frame", Main)
 BarBg.Size = UDim2.new(0, 180, 0, 10)
 BarBg.Position = UDim2.new(0.5, -90, 0.8, 0)
@@ -96,7 +98,7 @@ Gradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.new(1,0,1))
 })
 
--- Hiệu ứng RGB di chuyển
+-- Hiệu ứng cầu vồng chạy qua lại liên tục
 RunService.RenderStepped:Connect(function()
     Gradient.Offset = Vector2.new(math.sin(tick() * 3) * 0.5, 0)
 end)
@@ -108,21 +110,21 @@ PercentLabel.BackgroundTransparency = 1
 PercentLabel.TextColor3 = Color3.new(0.9, 0.9, 0.9)
 PercentLabel.Text = "0%"
 
--- 5. LOGIC CHẠY THEO TIẾNG NÓI & FIX LAG
+-- 5. LOGIC CHẠY VÀ FIX LAG NGẦM
 task.spawn(function()
-    -- Tối ưu hóa trước
+    -- Giảm đồ họa để fix lag
     settings().Rendering.QualityLevel = 1
     for _, v in pairs(game.Workspace:GetDescendants()) do
         if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
     end
 
-    -- Chạy mốc 20%
+    -- Giai đoạn 1: Chạy đến 20%
     task.wait(1)
     TweenService:Create(Bar, TweenInfo.new(0.5), {Size = UDim2.new(0.2, 0, 1, 0)}):Play()
     PercentLabel.Text = "20%"
-    PlayAndWait(Sound_20_ID) -- Đợi tiếng 1 xong
+    PlayAndWait(Sound_20_ID) -- Nghe xong tiếng 1 mới chạy tiếp %
     
-    -- Chạy mốc 40 - 80%
+    -- Giai đoạn 2: Chạy từ 40% đến 80%
     for i = 2, 4 do
         task.wait(1)
         local p = i * 20
@@ -130,15 +132,15 @@ task.spawn(function()
         PercentLabel.Text = p .. "%"
     end
     
-    -- Đợi tiếng 2 ở mốc 80%
+    -- Mốc 80%: Phát tiếng nói thứ 2
     PlayAndWait(Sound_80_ID)
     
-    -- Xong 100%
+    -- Giai đoạn cuối: 100%
     TweenService:Create(Bar, TweenInfo.new(0.5), {Size = UDim2.new(1, 0, 1, 0)}):Play()
     PercentLabel.Text = "DONE!"
     PercentLabel.TextColor3 = Color3.fromRGB(0, 255, 200)
     
-    -- Nhấp nháy chữ Done
+    -- Hiệu ứng nhấp nháy chữ Done
     while true do
         PercentLabel.Visible = not PercentLabel.Visible
         task.wait(0.5)
@@ -154,4 +156,3 @@ RunService.RenderStepped:Connect(function()
         frames, last = 0, os.clock()
     end
 end)
-
