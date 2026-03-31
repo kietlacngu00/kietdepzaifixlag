@@ -1,0 +1,112 @@
+-- ============================================================
+-- HỆ THỐNG FIX LAG ĐỒ HỌA NEON (TỰ ĐỘNG BIẾN MẤT)
+-- ============================================================
+local coreGui = pcall(function() return game:GetService("CoreGui").Name end) and game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+-- Xóa UI cũ nếu lỡ bấm 2 lần
+if coreGui:FindFirstChild("KietNeonFixLag") then
+    coreGui.KietNeonFixLag:Destroy()
+end
+
+-- TẠO KHUNG GIAO DIỆN CHỮ NHẬT GIỮA MÀN HÌNH
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KietNeonFixLag"
+screenGui.Parent = coreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 450, 0, 70) -- Khung hình chữ nhật nằm ngang
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5) -- Căn giữa chuẩn xác
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Nền đen nhám
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8) -- Bo góc nhẹ
+corner.Parent = frame
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0, 255, 255) -- Viền phát sáng Neon Cyan
+stroke.Thickness = 2
+stroke.Parent = frame
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, 0, 1, 0)
+textLabel.BackgroundTransparency = 1
+textLabel.Font = Enum.Font.GothamBold
+textLabel.TextSize = 18
+textLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+textLabel.Text = "Đang khởi động quy trình Fix Lag..."
+textLabel.Parent = frame
+
+-- QUY TRÌNH ÉP ĐỒ HỌA THỰC SỰ
+task.spawn(function()
+    local lighting = game:GetService("Lighting")
+    local terrain = workspace.Terrain
+
+    textLabel.Text = "Đang tắt bóng đổ & sương mù... (10%)"
+    task.wait(0.5)
+    
+    pcall(function()
+        -- Ép chất lượng Roblox xuống mức thấp nhất
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        
+        -- Tắt ánh sáng, sương mù, bóng đổ
+        lighting.GlobalShadows = false
+        lighting.FogEnd = 9e9
+        lighting.Brightness = 0
+        
+        -- Tắt chuyển động của nước
+        terrain.WaterWaveSize = 0
+        terrain.WaterWaveSpeed = 0
+        terrain.WaterReflectance = 0
+        terrain.WaterTransparency = 0
+        
+        -- Tắt hiệu ứng chói, mờ (Blur, SunRays)
+        for _, v in pairs(lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+                v.Enabled = false
+            end
+        end
+    end)
+
+    textLabel.Text = "Đang ép phẳng đồ họa Map... (30%)"
+    task.wait(0.5)
+    
+    local descendants = workspace:GetDescendants()
+    local total = #descendants
+    
+    -- Lặp qua toàn bộ Map để biến mọi thứ thành nhựa (Plastic)
+    for i, v in ipairs(descendants) do
+        pcall(function()
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.Plastic -- Biến thành nhựa
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v.Transparency = 1 -- Xóa ảnh dán tường
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Lifetime = NumberRange.new(0)
+            elseif v:IsA("Explosion") then
+                v.BlastPressure = 1
+                v.BlastRadius = 1
+            elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                v.Enabled = false
+            end
+        end)
+        
+        -- Cứ 1500 khối thì nghỉ 1 nhịp để chống văng game (Crash)
+        if i % 1500 == 0 then
+            local percent = math.floor((i / total) * 60) + 30
+            textLabel.Text = "Đang xóa rác đồ họa... (" .. percent .. "%)"
+            task.wait() 
+        end
+    end
+
+    textLabel.Text = "Hoàn tất! Game đã siêu mượt (100%)"
+    textLabel.TextColor3 = Color3.fromRGB(0, 255, 0) -- Đổi sang màu Xanh Lá
+    stroke.Color = Color3.fromRGB(0, 255, 0) -- Viền chuyển xanh lá
+    
+    -- Đợi 2 giây rồi tự động biến mất
+    task.wait(2)
+    screenGui:Destroy()
+end)
