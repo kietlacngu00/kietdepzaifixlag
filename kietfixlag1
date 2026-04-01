@@ -1,0 +1,123 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui", playerGui)
+
+local overlay = Instance.new("Frame")
+overlay.Size = UDim2.new(1,0,1,0)
+overlay.BackgroundColor3 = Color3.new(0,0,0)
+overlay.BackgroundTransparency = 1
+overlay.Parent = screenGui
+
+for i = 1,20 do
+	overlay.BackgroundTransparency = overlay.BackgroundTransparency - 0.05
+	wait(0.02)
+end
+
+local text = "kietdepzai"
+
+for i = 1, #text do
+	local char = string.sub(text, i, i)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0,50,0,50)
+	label.Position = UDim2.new(0.1 + i*0.06, 0, -0.2, 0)
+	label.BackgroundTransparency = 1
+	label.Text = char
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBlack
+	label.TextColor3 = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
+	label.Parent = screenGui
+
+	for y = -0.2, 0.5, 0.03 do
+		label.Position = UDim2.new(label.Position.X.Scale,0,y,0)
+		wait(0.02)
+	end
+
+	for y = 0.5, 0.45, -0.02 do
+		label.Position = UDim2.new(label.Position.X.Scale,0,y,0)
+		wait(0.02)
+	end
+
+	wait(0.1)
+end
+
+local statusText = Instance.new("TextLabel")
+statusText.Size = UDim2.new(1,0,0.1,0)
+statusText.Position = UDim2.new(0,0,0.8,0)
+statusText.BackgroundTransparency = 1
+statusText.Text = "dang chay..."
+statusText.TextScaled = true
+statusText.Font = Enum.Font.GothamBold
+statusText.TextColor3 = Color3.fromRGB(255,255,255)
+statusText.Parent = screenGui
+
+local progressBg = Instance.new("Frame")
+progressBg.Size = UDim2.new(0.6,0,0.03,0)
+progressBg.Position = UDim2.new(0.2,0,0.9,0)
+progressBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
+progressBg.Parent = screenGui
+
+Instance.new("UICorner", progressBg).CornerRadius = UDim.new(0,10)
+
+local progressBar = Instance.new("Frame")
+progressBar.Size = UDim2.new(0,0,1,0)
+progressBar.BackgroundColor3 = Color3.fromRGB(0,255,150)
+progressBar.Parent = progressBg
+
+Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0,10)
+
+wait(0.5)
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.4,0,0.18,0)
+frame.Position = UDim2.new(0.3,0,0.4,0)
+frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+frame.Parent = screenGui
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,15)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0.4,0)
+title.BackgroundTransparency = 1
+title.Text = "kietdepzai"
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(0,255,150)
+title.Parent = frame
+
+local barBg = Instance.new("Frame")
+barBg.Size = UDim2.new(0.8,0,0.2,0)
+barBg.Position = UDim2.new(0.1,0,0.6,0)
+barBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
+barBg.Parent = frame
+
+Instance.new("UICorner", barBg).CornerRadius = UDim.new(0,10)
+
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0,0,1,0)
+bar.BackgroundColor3 = Color3.fromRGB(0,255,150)
+bar.Parent = barBg
+
+Instance.new("UICorner", bar).CornerRadius = UDim.new(0,10)
+
+for i = 1,100 do
+	bar.Size = UDim2.new(i/100,0,1,0)
+	progressBar.Size = UDim2.new(i/100,0,1,0)
+	statusText.Text = "dang chay... "..i.."%"
+
+	if i == 30 then
+		settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+	end
+	
+	if i == 60 then
+		game.Lighting.GlobalShadows = false
+	end
+	
+	wait(0.02)
+end
+
+statusText.Text = "hoan thanh"
+wait(1)
+
+screenGui:Destroy()
