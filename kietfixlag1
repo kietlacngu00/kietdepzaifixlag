@@ -1,123 +1,148 @@
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+-- ============================================================
+-- SCRIPT TỔNG HỢP: INTRO KIETDEPZAI + FIX LAG SIÊU CẤP + 3 SOUND
+-- ============================================================
+local TweenService = game:GetService("TweenService")
+local coreGui = pcall(function() return game:GetService("CoreGui").Name end) and game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-local screenGui = Instance.new("ScreenGui", playerGui)
-
-local overlay = Instance.new("Frame")
-overlay.Size = UDim2.new(1,0,1,0)
-overlay.BackgroundColor3 = Color3.new(0,0,0)
-overlay.BackgroundTransparency = 1
-overlay.Parent = screenGui
-
-for i = 1,20 do
-	overlay.BackgroundTransparency = overlay.BackgroundTransparency - 0.05
-	wait(0.02)
+-- 1. HÀM PHÁT ÂM THANH NỐI TIẾP (Đợi bài này hết mới sang bài sau)
+local function PlaySoundAndWait(id)
+    local s = Instance.new("Sound", game:GetService("SoundService"))
+    s.SoundId = "rbxassetid://"..id
+    s.Volume = 3
+    s:Play()
+    
+    local done = false
+    local conn
+    conn = s.Ended:Connect(function() 
+        done = true 
+        if conn then conn:Disconnect() end
+    end)
+    
+    -- Chống treo nếu âm thanh bị lỗi không chạy
+    local timeout = 0
+    while not done and timeout < 15 do 
+        task.wait(0.1) 
+        timeout = timeout + 0.1 
+    end
+    s:Destroy()
 end
 
-local text = "kietdepzai"
+-- 2. HIỆU ỨNG INTRO CHỮ "KIETDEPZAI" RƠI (MÀN HÌNH ĐEN)
+local introGui = Instance.new("ScreenGui", coreGui)
+introGui.Name = "KietIntroUI"
+introGui.IgnoreGuiInset = true
 
-for i = 1, #text do
-	local char = string.sub(text, i, i)
+local bg = Instance.new("Frame", introGui)
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+bg.BorderSizePixel = 0
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0,50,0,50)
-	label.Position = UDim2.new(0.1 + i*0.06, 0, -0.2, 0)
-	label.BackgroundTransparency = 1
-	label.Text = char
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
-	label.TextColor3 = Color3.fromRGB(math.random(0,255),math.random(0,255),math.random(0,255))
-	label.Parent = screenGui
+-- Chọn màu ngẫu nhiên CHUNG cho cả chữ và viền Menu sau này
+local randomColor = Color3.fromRGB(math.random(100, 255), math.random(100, 255), math.random(100, 255))
 
-	for y = -0.2, 0.5, 0.03 do
-		label.Position = UDim2.new(label.Position.X.Scale,0,y,0)
-		wait(0.02)
-	end
+local textStr = "kietdepzai"
+local letterWidth = 65
+local startX = -((#textStr * letterWidth) / 2) + (letterWidth / 2)
+local labels = {}
 
-	for y = 0.5, 0.45, -0.02 do
-		label.Position = UDim2.new(label.Position.X.Scale,0,y,0)
-		wait(0.02)
-	end
-
-	wait(0.1)
+for i = 1, #textStr do
+    local lbl = Instance.new("TextLabel", bg)
+    lbl.Size = UDim2.new(0, letterWidth, 0, 100)
+    lbl.Position = UDim2.new(0.5, startX + (i-1)*letterWidth, -0.3, 0) -- Giấu trên cao
+    lbl.AnchorPoint = Vector2.new(0.5, 0.5)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.GothamBlack
+    lbl.TextSize = 90 -- Chữ to rõ rệt
+    lbl.TextColor3 = randomColor
+    lbl.Text = string.sub(textStr, i, i)
+    table.insert(labels, lbl)
 end
 
-local statusText = Instance.new("TextLabel")
-statusText.Size = UDim2.new(1,0,0.1,0)
-statusText.Position = UDim2.new(0,0,0.8,0)
-statusText.BackgroundTransparency = 1
-statusText.Text = "dang chay..."
-statusText.TextScaled = true
-statusText.Font = Enum.Font.GothamBold
-statusText.TextColor3 = Color3.fromRGB(255,255,255)
-statusText.Parent = screenGui
+-- CHẠY HIỆU ỨNG RƠI
+task.spawn(function()
+    local dropInfo = TweenInfo.new(0.7, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+    for i, lbl in ipairs(labels) do
+        TweenService:Create(lbl, dropInfo, {Position = UDim2.new(0.5, startX + (i-1)*letterWidth, 0.5, 0)}):Play()
+        task.wait(0.1)
+    end
+    task.wait(2)
+    -- Mờ dần để hiện menu fix lag
+    TweenService:Create(bg, TweenInfo.new(1), {BackgroundTransparency = 1}):Play()
+    for _, l in pairs(labels) do TweenService:Create(l, TweenInfo.new(1), {TextTransparency = 1}):Play() end
+    task.wait(1)
+    introGui:Destroy()
+end)
 
-local progressBg = Instance.new("Frame")
-progressBg.Size = UDim2.new(0.6,0,0.03,0)
-progressBg.Position = UDim2.new(0.2,0,0.9,0)
-progressBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
-progressBg.Parent = screenGui
+-- 3. HỆ THỐNG FIX LAG (CHẠY SAU KHI INTRO BẮT ĐẦU)
+task.wait(0.5)
+local fixGui = Instance.new("ScreenGui", coreGui)
+local frame = Instance.new("Frame", fixGui)
+frame.Size = UDim2.new(0, 480, 0, 80)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
-Instance.new("UICorner", progressBg).CornerRadius = UDim.new(0,10)
+local stroke = Instance.new("UIStroke", frame)
+stroke.Color = randomColor -- Màu viền trùng với màu chữ rơi
+stroke.Thickness = 3
 
-local progressBar = Instance.new("Frame")
-progressBar.Size = UDim2.new(0,0,1,0)
-progressBar.BackgroundColor3 = Color3.fromRGB(0,255,150)
-progressBar.Parent = progressBg
+local txt = Instance.new("TextLabel", frame)
+txt.Size = UDim2.new(1, 0, 1, 0)
+txt.BackgroundTransparency = 1
+txt.Font = Enum.Font.GothamBold
+txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+txt.TextSize = 20
+txt.Text = "Đang chuẩn bị tối ưu..."
 
-Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0,10)
+-- TIẾN TRÌNH FIX LAG KÈM 3 ÂM THANH NỐI TIẾP
+task.spawn(function()
+    local lighting = game:GetService("Lighting")
+    
+    -- GĐ 1: Âm thanh 1 (119719268399623)
+    txt.Text = "Đang tối ưu Ánh sáng & Bóng đổ..."
+    pcall(function()
+        lighting.GlobalShadows = false
+        lighting.Brightness = 0
+        for _, v in pairs(lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("BlurEffect") then v:Destroy() end
+        end
+    end)
+    PlaySoundAndWait("119719268399623") -- CHỜ HẾT BÀI 1
 
-wait(0.5)
+    -- GĐ 2: Âm thanh 2 (139289580459876)
+    txt.Text = "Đang xóa bỏ Hiệu ứng Skill cực nặng..."
+    local d = workspace:GetDescendants()
+    for i, v in ipairs(d) do
+        pcall(function()
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") then
+                v:Destroy() -- Xóa sổ để máy mát hơn
+            elseif v:IsA("BasePart") then
+                v.CastShadow = false
+            end
+        end)
+        if i % 3000 == 0 then task.wait() end
+    end
+    PlaySoundAndWait("139289580459876") -- CHỜ HẾT BÀI 2
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0.4,0,0.18,0)
-frame.Position = UDim2.new(0.3,0,0.4,0)
-frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
-frame.Parent = screenGui
+    -- GĐ 3: Âm thanh 3 (138037008354605)
+    txt.Text = "Đang ép đồ họa Smooth Plastic..."
+    for i, v in ipairs(d) do
+        pcall(function()
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v:Destroy()
+            end
+        end)
+        if i % 3000 == 0 then task.wait() end
+    end
+    PlaySoundAndWait("138037008354605") -- CHỜ HẾT BÀI 3
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,15)
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0.4,0)
-title.BackgroundTransparency = 1
-title.Text = "kietdepzai"
-title.TextScaled = true
-title.Font = Enum.Font.GothamBold
-title.TextColor3 = Color3.fromRGB(0,255,150)
-title.Parent = frame
-
-local barBg = Instance.new("Frame")
-barBg.Size = UDim2.new(0.8,0,0.2,0)
-barBg.Position = UDim2.new(0.1,0,0.6,0)
-barBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
-barBg.Parent = frame
-
-Instance.new("UICorner", barBg).CornerRadius = UDim.new(0,10)
-
-local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0,0,1,0)
-bar.BackgroundColor3 = Color3.fromRGB(0,255,150)
-bar.Parent = barBg
-
-Instance.new("UICorner", bar).CornerRadius = UDim.new(0,10)
-
-for i = 1,100 do
-	bar.Size = UDim2.new(i/100,0,1,0)
-	progressBar.Size = UDim2.new(i/100,0,1,0)
-	statusText.Text = "dang chay... "..i.."%"
-
-	if i == 30 then
-		settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-	end
-	
-	if i == 60 then
-		game.Lighting.GlobalShadows = false
-	end
-	
-	wait(0.02)
-end
-
-statusText.Text = "hoan thanh"
-wait(1)
-
-screenGui:Destroy()
+    -- KẾT THÚC VÀ TỰ DỌN DẸP
+    txt.Text = "HOÀN TẤT! HỆ THỐNG ĐÃ SIÊU MƯỢT"
+    txt.TextColor3 = Color3.fromRGB(0, 255, 0)
+    task.wait(2)
+    fixGui:Destroy()
+end)
